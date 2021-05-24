@@ -1,7 +1,6 @@
 package main
 
 import (
-	"html/template"
 	"io"
 	"log"
 	"net/http"
@@ -9,10 +8,6 @@ import (
 	"strings"
 	"time"
 )
-
-var addr *string
-var resDir *string
-var templ *template.Template
 
 // RunServer …
 func RunServer() {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -12,6 +13,7 @@ var (
 	ArgPort     string
 	ArgBotToken string
 	ArgImage    string
+	ArgMUrl     string
 )
 
 // ParseArgs parses command line flags
@@ -20,6 +22,7 @@ func ParseArgs() {
 	ArgPort = *getEnvArg("TNOTIFY_PORT", "port", "18358", "command port")
 	ArgBotToken = *getEnvArg("TNOTIFY_BOT_TOKEN", "token", "1557531115:AAGC6dsxMyZhX9ULqBwc4fYJSuXmoRxuRBI", "Telegram bot token")
 	ArgImage = *getEnvArg("TNOTIFY_IMAGE", "image", "/data/output/Camera1/lastsnap.jpg", "last camera image")
+	ArgMUrl = *getEnvArg("MOTION_CONTROL_URL", "motion-url", "http://localhost:7999", "Motion Webcontrol URL")
 	flag.Parse()
 
 	dir, err := filepath.Abs(*pdir)
@@ -27,6 +30,11 @@ func ParseArgs() {
 		panic(err)
 	}
 	ArgWorkdir = dir
+
+	log.Printf("arg dir := '%s'", dir)
+	log.Printf("arg port := %s", ArgPort)
+	log.Printf("arg telegram token := '%s'", ArgBotToken)
+	log.Printf("arg motion control url := '%s'", ArgMUrl)
 }
 
 func getEnvArg(env string, arg string, dflt string, usage string) *string {

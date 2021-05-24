@@ -22,6 +22,7 @@ type Chat struct {
 	Date      string `json:"date"`
 	MsgCount  int    `json:"mcount"`
 	Admin     bool   `json:"admin"`
+	Camera    string `json:"camera"`
 }
 
 var (
@@ -62,7 +63,7 @@ func dbListUsers() string {
 		strs = append(strs, fmt.Sprintf("%s (%v, %v)", chat.Name, chat.ChatID, chat.Admin))
 		strs = append(strs, fmt.Sprintf("  - Name:        %s, %s", chat.FirstName, chat.LastName))
 		strs = append(strs, fmt.Sprintf("  - Registriert: %s", chat.Date))
-		strs = append(strs, fmt.Sprintf("  - Nachrichten: %d", chat.MsgCount))
+		strs = append(strs, fmt.Sprintf("  - Camera: %s", chat.Camera))
 	}
 
 	return strings.Join(strs, "\n")
@@ -90,6 +91,7 @@ func dbRegisterChat(id int64, user string, fname string, lname string, token str
 		Token:     token,
 		Date:      now.Format("2006-Jan-2T15:04:05-0700"),
 		MsgCount:  0,
+		Admin:     (len(chats) == 0),
 	})
 
 	return dbFlush()
@@ -113,40 +115,36 @@ func dbFlush() error {
 	return os.Rename(fpath+".new", fpath)
 }
 
-func dbIsRegisteredChat(id int64) error {
-	for _, chat := range chats {
+func dbFindUser(id int64) *Chat {
+	for i := range chats {
+		chat := &chats[i]
 		if chat.ChatID == id {
-			return nil
+			return chat
 		}
 	}
-	return errors.New("no registered user")
+	return nil
 }
 
-func dbIsAdmin(id int64) bool {
-	first := true
-	for _, chat := range chats {
-		if chat.ChatID == id {
-			return chat.Admin || first
-		}
-		first = false
+func dbIsRegisteredChat(id int64) error {
+	if nil == dbFindUser(id) {
+		return errors.New("no registered user")
 	}
-	return false
+	return nil
 }
 
 func dbToggleAdmin(id int64) error {
-	for _, chat := range chats {
-		if chat.ChatID == id {
-			chat.Admin = !chat.Admin
-			return dbFlush()
-		}
+	chat := dbFindUser(id)
+	if nil == chat {
+		return errors.New("no registered user")
 	}
-	return errors.New("no registered user")
+	chat.Admin = !chat.Admin
+	return dbFlush()
 }
 
-func dbLeave(id int64) string {
+func dbLeave(user *Chat) string {
 
 	for i, chat := range chats {
-		if chat.ChatID == id {
+		if chat.ChatID == user.ChatID {
 			copy(chats[i:], chats[i+1:])
 			chats = chats[:len(chats)-1]
 			if err := dbFlush(); err != nil {
