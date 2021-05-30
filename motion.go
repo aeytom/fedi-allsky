@@ -36,13 +36,13 @@ func motionCtrlRequest(path string, contentType string) ([]byte, error) {
 }
 
 func motionWebcontrolHtmlOutput(value bool) error {
-	onoff := "off"
+	onoff := "1"
 	contentType := "text/plain"
 	if value {
-		onoff = "on"
+		onoff = "2"
 		contentType = "text/html"
 	}
-	_, err := motionCtrlRequest("/0/config/set?webcontrol_html_output="+onoff, contentType)
+	_, err := motionCtrlRequest("/0/config/set?webcontrol_interface="+onoff, contentType)
 	return err
 }
 
@@ -72,7 +72,7 @@ func motionConfigGet(camera string, setting string) (string, error) {
 		return "", err
 	}
 
-	if matches := regexp.MustCompile(setting + `\s*=\s*(.*)`).FindSubmatch(body); matches != nil {
+	if matches := regexp.MustCompile(`(?m)^` + setting + `\s*=\s*(.*?)\s*$`).FindSubmatch(body); matches != nil {
 		return string(matches[1]), nil
 	}
 	return "", errors.New("Motion get setting failed: " + setting)
@@ -94,22 +94,6 @@ func motionGetCameras() error {
 	for i, m := range rea.FindAllStringSubmatch(string(body), -1) {
 		if i > 0 {
 			cameras[m[1]] = m[2]
-		}
-	}
-
-	if len(cameras) == 0 {
-		if err := motionWebcontrolHtmlOutput(false); err != nil {
-			return err
-		}
-
-		body, err := motionCtrlRequest("/", "text/plain")
-		if err != nil {
-			return err
-		}
-
-		rea := regexp.MustCompile(`(?m)^(\d+)`)
-		for _, m := range rea.FindAllStringSubmatch(string(body), -1) {
-			cameras[m[1]] = "Camera " + m[1]
 		}
 	}
 
