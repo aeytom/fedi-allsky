@@ -1,3 +1,8 @@
 chats.db
 telegram-motion-control
-workspace.code-workspace
+*.code-workspace
+16-53-02.jpg
+photo_test.jpg
+register_db.json
+.vscode/launch.json
+crop.jpg
