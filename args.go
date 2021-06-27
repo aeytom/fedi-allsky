@@ -14,6 +14,7 @@ var (
 	ArgBotToken string
 	ArgImage    string
 	ArgMUrl     string
+	ArgS3Bucket string
 )
 
 // ParseArgs parses command line flags
@@ -23,6 +24,7 @@ func ParseArgs() {
 	ArgBotToken = *getEnvArg("TNOTIFY_BOT_TOKEN", "token", "1557531115:AAGC6dsxMyZhX9ULqBwc4fYJSuXmoRxuRBI", "Telegram bot token")
 	ArgImage = *getEnvArg("TNOTIFY_IMAGE", "image", "/data/output/Camera1/lastsnap.jpg", "last camera image")
 	ArgMUrl = *getEnvArg("MOTION_CONTROL_URL", "motion-url", "http://localhost:7999", "Motion Webcontrol URL")
+	ArgS3Bucket = *getEnvArg("BUCKET", "bucket", "tay-birdfeed", "AWS S3 bucket name")
 	flag.Parse()
 
 	dir, err := filepath.Abs(*pdir)

@@ -57,8 +57,8 @@ func main() {
 			Command:     "snapshot",
 			Description: "/snapshot - do a new snapshot"},
 		{
-			Command:     "leave",
-			Description: "/leave – do not receive further notifications"},
+			Command:     "abo",
+			Description: "/abo – automatically send new cropped images"},
 		{
 			Command:     "leave",
 			Description: "/leave – do not receive further notifications"},
@@ -102,6 +102,8 @@ func main() {
 					msg.Text = cmdSendPhoto(update, user)
 				case "snapshot":
 					msg.Text = cmdSendSnapshot(update, user)
+				case "abo":
+					msg.Text = cmdToggleAbo(update, user)
 				case "camera":
 					msg.Text = cmdSetCamera(update, user)
 				case "list":
@@ -207,6 +209,22 @@ func notifyTelegram(msg string) string {
 	return "OK"
 }
 
+func telegramSendCroppedImage(imgFile string) string {
+
+	for _, user := range chats {
+		if !user.AboPhoto {
+			continue
+		}
+		pho := tgbotapi.NewPhotoUpload(user.ChatID, imgFile)
+		pho.Caption = imgFile
+		if _, err := bot.Send(pho); err != nil {
+			return "Error: " + err.Error()
+		}
+	}
+
+	return "OK"
+}
+
 func cmdSendSnapshot(update tgbotapi.Update, user *Chat) string {
 	if _, err := motionAction(user.Camera, "snapshot"); err != nil {
 		return err.Error()
@@ -278,4 +296,14 @@ func cmdSetCamera(update tgbotapi.Update, user *Chat) string {
 		}
 	}
 	return fmt.Sprintf("Can't use camera: '%s'", arg)
+}
+
+func cmdToggleAbo(update tgbotapi.Update, user *Chat) string {
+	user.AboPhoto = !user.AboPhoto
+	dbFlush()
+	if user.AboPhoto {
+		return "You get new cropped images automatically."
+	} else {
+		return "You don't get new images automatically."
+	}
 }

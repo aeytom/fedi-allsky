@@ -23,6 +23,7 @@ type Chat struct {
 	MsgCount  int    `json:"mcount"`
 	Admin     bool   `json:"admin"`
 	Camera    string `json:"camera"`
+	AboPhoto  bool   `json:"abo_photo"`
 }
 
 var (
