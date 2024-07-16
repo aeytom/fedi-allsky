@@ -6,7 +6,6 @@ require (
 	github.com/aeytom/fedilib v0.0.0-20240716135746-b109d4213816
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/mattn/go-mastodon v0.0.8
-	github.com/oliamb/cutter v0.2.2
 )
 
 require (
