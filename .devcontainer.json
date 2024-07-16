@@ -1,0 +1,14 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/go
+{
+	"name": "Fedi-Allsky",
+	"image": "mcr.microsoft.com/devcontainers/go:1-1.22-bookworm",
+	"features": {
+		"ghcr.io/swift-server-community/swift-devcontainer-features/sqlite:1": {}
+	},
+	"hostRequirements": {},
+	"appPort": 18888,
+	"forwardPorts": [
+		18888
+	]
+}

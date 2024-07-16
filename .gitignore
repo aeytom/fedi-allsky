@@ -6,3 +6,7 @@ photo_test.jpg
 register_db.json
 .vscode/launch.json
 crop.jpg
+.env.yaml
+vendor/
+env.yaml
+fedi-allsky
