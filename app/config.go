@@ -9,7 +9,7 @@ import (
 
 	"github.com/aeytom/fedi-allsky/allsky"
 	"github.com/aeytom/fedilib"
-	"github.com/go-yaml/yaml"
+	"gopkg.in/yaml.v3"
 )
 
 type Env struct {
