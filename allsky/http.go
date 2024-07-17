@@ -68,10 +68,14 @@ func (s *Config) tootImage(p *AllskyParams, w http.ResponseWriter) bool {
 	status := "New #allsky image from " + p.as_date + "-" + p.as_time + "\n\n" +
 		"Sunset 🌇:  " + p.as_sun_sunset.Format(time.DateTime) + "\n" +
 		"Sunrise 🌅: " + p.as_sun_sunrise.Format(time.DateTime) + "\n" +
+		"\nSky\n" +
+		fmt.Sprintf("Star count:   %d\n", p.as_starcount) +
+		fmt.Sprintf("Meteor count: %d\n", p.as_meteorcount) +
+		fmt.Sprintf("ISS altitude: %.1f°\n", p.as_25544alt) +
 		"\nCamera\n" +
-		fmt.Sprintf("Gain:        %d\n", p.as_gain) +
-		fmt.Sprintf("Exposure:    %v\n", p.as_exposure_us) +
-		fmt.Sprintf("Temperature: %d°C (sensor)\n", p.as_temperature_c) +
+		fmt.Sprintf("Gain:         %d\n", p.as_gain) +
+		fmt.Sprintf("Exposure:     %v\n", p.as_exposure_us) +
+		fmt.Sprintf("Temperature:  %d°C (sensor)\n", p.as_temperature_c) +
 		"\n" +
 		s.PublicUrl + "\n"
 
