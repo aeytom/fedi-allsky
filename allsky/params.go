@@ -5,22 +5,23 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"time"
 )
 
 type AllskyParams struct {
-	as_25544alt      float64 // =-45deg 38' 33.7"
-	as_25544visible  bool    // =No
-	as_date          string  // =20240714
-	as_exposure_us   int64   // =30000000
-	as_gain          int64   // =255
-	as_meteorcount   int64   // =0
-	as_starcount     int64   // =958
-	as_sun_sunrise   string  // =20240714
-	as_sun_sunset    string  // =20240713
-	as_temperature_c int64   // =32
-	as_time          string  // =015605
-	current_image    string  // =/home/tay/allsky/tmp/image-20240714015605.jpg
-	date_name        string  // =20240714
+	as_25544alt      float64       // =-45deg 38' 33.7"
+	as_25544visible  bool          // =No
+	as_date          string        // =20240714
+	as_exposure_us   time.Duration // =30000000
+	as_gain          int64         // =255
+	as_meteorcount   int64         // =0
+	as_starcount     int64         // =958
+	as_sun_sunrise   time.Time     // =20240714
+	as_sun_sunset    time.Time     // =20240713
+	as_temperature_c int64         // =32
+	as_time          string        // =015605
+	current_image    string        // =/home/tay/allsky/tmp/image-20240714015605.jpg
+	date_name        string        // =20240714
 }
 
 func ParseRequest(req *http.Request) *AllskyParams {
@@ -42,12 +43,12 @@ func ParseRequest(req *http.Request) *AllskyParams {
 		as_25544alt:      mustParseAngle(as_25544alt),
 		as_25544visible:  mustParseBool(as_25544visible),
 		as_date:          as_date,
-		as_exposure_us:   mustParseInt(as_exposure_us),
+		as_exposure_us:   mustParseDuration(as_exposure_us + "us"),
 		as_gain:          mustParseInt(as_gain),
 		as_meteorcount:   mustParseInt(as_meteorcount),
 		as_starcount:     mustParseInt(as_starcount),
-		as_sun_sunrise:   as_sun_sunrise,
-		as_sun_sunset:    as_sun_sunset,
+		as_sun_sunrise:   mustParseDateTime(as_sun_sunrise),
+		as_sun_sunset:    mustParseDateTime(as_sun_sunset),
 		as_temperature_c: mustParseInt(as_temperature_c),
 		as_time:          as_time,
 		current_image:    current_image,
@@ -94,7 +95,7 @@ func mustParseAngle(val string) float64 {
 }
 
 func mustParseInt(val string) int64 {
-	if i, err := strconv.ParseInt(val, 10, 16); err != nil {
+	if i, err := strconv.ParseInt(val, 10, 64); err != nil {
 		log.Print("not an integer: "+val, err)
 		return 0
 	} else {
@@ -108,4 +109,24 @@ func mustParseBool(val string) bool {
 	} else {
 		return false
 	}
+}
+
+func mustParseDateTime(val string) time.Time {
+	if loc, err := time.LoadLocation("Europe/Berlin"); err != nil {
+		log.Println(val, err)
+	} else if t, err := time.ParseInLocation("20060102 15:04:05", val, loc); err != nil {
+		log.Println(val, err)
+	} else {
+		return t
+	}
+	return time.Time{}
+}
+
+func mustParseDuration(val string) time.Duration {
+	if t, err := time.ParseDuration(val); err != nil {
+		log.Println(val, err)
+	} else {
+		return t
+	}
+	return 0
 }

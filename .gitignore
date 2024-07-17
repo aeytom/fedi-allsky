@@ -10,3 +10,4 @@ crop.jpg
 vendor/
 env.yaml
 fedi-allsky
+*.log

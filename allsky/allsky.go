@@ -52,23 +52,20 @@ func (s *Config) Init(log *log.Logger) {
 
 func (s *Config) Current() (io.ReadCloser, error) {
 	url := s.LocalUrl + "/current/tmp/image.jpg?_ts=" + fmt.Sprint(time.Now().Unix())
-	log.Print(url)
-	if resp, err := http.Get(url); err != nil {
-		return nil, err
-	} else if resp.StatusCode != 200 {
-		return nil, errors.New("invalid status code " + fmt.Sprint(resp.StatusCode))
-	} else if resp.Header.Get("content-type") != "image/jpeg" {
-		return nil, errors.New("invalid content type " + resp.Header.Get("content-type"))
-	} else {
-		// defer resp.Body.Close()
-		return resp.Body, nil
-	}
+	return s.ImageHttp(url)
 }
 
 // Image gets a named image
 // http://allsky.fritz.box/images/20240713/image-20240714015605.jpg
 func (s *Config) Image(date string, file string) (io.ReadCloser, error) {
-	if resp, err := http.Get(s.LocalUrl + "/images/" + date + "/" + file); err != nil {
+	url := s.LocalUrl + "/images/" + date + "/" + file
+	return s.ImageHttp(url)
+}
+
+// Image gets a image with HTTP
+func (s *Config) ImageHttp(url string) (io.ReadCloser, error) {
+	log.Print(url)
+	if resp, err := http.Get(url); err != nil {
 		return nil, err
 	} else if resp.StatusCode != 200 {
 		return nil, errors.New("invalid status code " + fmt.Sprint(resp.StatusCode))
