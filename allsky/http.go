@@ -4,16 +4,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/aeytom/fedilib"
-	"github.com/mattn/go-mastodon"
 )
 
-// ListenMotionWebhook …
-func (s *Config) ListenMotionWebhook(mcfg fedilib.Toot) {
+// ListenAllskyHttp …
+func (s *Config) ListenAllskyHttp(mcfg fedilib.Toot) {
 
 	s.toot = mcfg
 
@@ -30,7 +27,14 @@ func (s *Config) htNotify(w http.ResponseWriter, req *http.Request) {
 
 	cacheHeader(w)
 
-	p := ParseRequest(req)
+	var p *AllskyParams
+	if pr, err := ParseRequest(req); err == nil {
+		p = pr
+	} else {
+		writeResponseError("parameter parse error", err, http.StatusBadRequest, w)
+		return
+	}
+	s.dbStore(p)
 
 	if p.as_starcount < (s.MinStarCount / 4) {
 		writeResponseError("too less stars: "+fmt.Sprint(p.as_starcount), nil, http.StatusOK, w)
@@ -39,60 +43,40 @@ func (s *Config) htNotify(w http.ResponseWriter, req *http.Request) {
 
 	if p.as_starcount > s.MinStarCount {
 		// clear sky
-		s.tootImage(p, w)
+		s.autoTootImage("as_starcount", p, w)
 		return
 	}
 
 	if p.as_25544visible && p.as_25544alt > s.MinIssAlititude {
 		// ISS above 30°
-		s.tootImage(p, w)
+		s.autoTootImage("as_25544alt", p, w)
 		return
 	}
 
 	if p.as_meteorcount > s.MinMeteorCount {
 		// meteors ?
-		s.tootImage(p, w)
+		s.autoTootImage("as_meteorcount", p, w)
 		return
 	}
 
 	writeResponseError("no interesting objects and not enough stars: "+fmt.Sprint(p.as_starcount), nil, http.StatusOK, w)
 }
 
-func (s *Config) tootImage(p *AllskyParams, w http.ResponseWriter) bool {
+func (s *Config) autoTootImage(key string, p *AllskyParams, w http.ResponseWriter) {
 
-	if !touchLockFile(86400 / 2) {
-		writeResponseError("no post to often", nil, http.StatusTooEarly, w)
-		return true
+	if !s.lastActionBefore(key, 16*time.Hour) {
+		writeResponseError("do not post to often for "+key, nil, http.StatusOK, w)
+		return
 	}
 
-	status := "New #allsky image from " + p.as_date + "-" + p.as_time + "\n\n" +
-		"Sunset 🌇:  " + p.as_sun_sunset.Format(time.DateTime) + "\n" +
-		"Sunrise 🌅: " + p.as_sun_sunrise.Format(time.DateTime) + "\n" +
-		"\nSky\n" +
-		fmt.Sprintf("Star count:   %d\n", p.as_starcount) +
-		fmt.Sprintf("Meteor count: %d\n", p.as_meteorcount) +
-		fmt.Sprintf("ISS altitude: %.1f°\n", p.as_25544alt) +
-		"\nCamera\n" +
-		fmt.Sprintf("Gain:         %d\n", p.as_gain) +
-		fmt.Sprintf("Exposure:     %v\n", p.as_exposure_us) +
-		fmt.Sprintf("Temperature:  %d°C (sensor)\n", p.as_temperature_c) +
-		"\n" +
-		s.PublicUrl + "\n"
-
-	toot := mastodon.Toot{
-		Status:     status,
-		Visibility: mastodon.VisibilityPublic,
-		Language:   "en",
+	err := s.tootAllskyParams(p, nil)
+	if err != nil {
+		writeResponseError("toot allsky params", err, http.StatusInternalServerError, w)
+	} else {
+		s.markActionTime(key)
+		s.dbExpire(p.date_name)
+		writeResponseError("allsky image posted", nil, http.StatusOK, w)
 	}
-
-	if ifile, err := s.Image(p.date_name, filepath.Base(p.current_image)); err != nil {
-		writeResponseError("read allsky image", err, http.StatusInternalServerError, w)
-		return true
-	} else if err := s.toot.TootWithImageReader(toot, ifile, "Allsky Image"); err != nil {
-		writeResponseError("post toot", err, http.StatusInternalServerError, w)
-		return true
-	}
-	return false
 }
 
 // logHandler …
@@ -115,26 +99,4 @@ func writeResponseError(msg string, err error, code int, w http.ResponseWriter) 
 	}
 	log.Println(msg)
 	http.Error(w, msg, code)
-}
-
-func touchLockFile(minage int) bool {
-	fileName := os.TempDir() + "/temp.txt"
-	info, err := os.Stat(fileName)
-	if os.IsNotExist(err) {
-		file, err := os.Create(fileName)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer file.Close()
-		return true
-	}
-	if info.ModTime().Add(time.Second * time.Duration(minage)).Before(time.Now()) {
-		currentTime := time.Now().Local()
-		err = os.Chtimes(fileName, currentTime, currentTime)
-		if err != nil {
-			fmt.Println(err)
-		}
-		return true
-	}
-	return false
 }

@@ -11,6 +11,9 @@ func (s *Config) RegisterAllsky(cfg Allsky) {
 }
 
 func (s *Config) cmdAllsky(status *mastodon.Status) error {
+
+	s.allsky.Current()
+
 	ir, err := s.allsky.Current()
 	if err != nil {
 		return err
@@ -35,4 +38,19 @@ func (s *Config) cmdAllsky(status *mastodon.Status) error {
 		return err
 	}
 	return nil
+}
+
+func (s *Config) cmdBestStarcount(status *mastodon.Status) error {
+	err := s.allsky.TootBest(status)
+	return err
+}
+
+func (s *Config) cmdMeteorCount(status *mastodon.Status) error {
+	err := s.allsky.TootMeteorCount(status)
+	return err
+}
+
+func (s *Config) cmdIssVisible(status *mastodon.Status) error {
+	err := s.allsky.TootIssVisible(status)
+	return err
 }

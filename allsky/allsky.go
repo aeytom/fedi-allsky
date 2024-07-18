@@ -1,14 +1,17 @@
 package allsky
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/aeytom/fedilib"
+	"github.com/mattn/go-mastodon"
 )
 
 type Config struct {
@@ -16,12 +19,14 @@ type Config struct {
 	PublicUrl       string  `yaml:"public_url,omitempty" json:"public_url,omitempty"`
 	ListenPort      int16   `yaml:"listen_port,omitempty" json:"listen_port,omitempty"`
 	ListenHost      string  `yaml:"listen_host,omitempty" json:"listen_host,omitempty"`
-	MinStarCount    int64   `yaml:"min_star_count,omitempty"`
-	MinIssAlititude float64 `yaml:"min_iss_alititude,omitempty"`
-	MinMeteorCount  int64   `yaml:"min_meteor_count,omitempty"`
-
+	MinStarCount    int64   `yaml:"min_star_count,omitempty" json:"min_star_count,omitempty"`
+	MinIssAlititude float64 `yaml:"min_iss_alititude,omitempty" json:"min_iss_alititude,omitempty"`
+	MinMeteorCount  int64   `yaml:"min_meteor_count,omitempty" json:"min_meteor_count,omitempty"`
+	//
+	SqliteDb string `yaml:"sqlite_db,omitempty" json:"sqlite_db,omitempty"`
 	//
 	log  *log.Logger
+	db   *sql.DB
 	toot fedilib.Toot
 }
 
@@ -47,7 +52,13 @@ func (s *Config) Init(log *log.Logger) {
 	if s.MinMeteorCount == 0 {
 		s.MinMeteorCount = 1
 	}
+
+	if s.SqliteDb == "" {
+		s.SqliteDb = "allsky-post.db?mode=rwc&_journal=wal"
+	}
+
 	s.log = log
+	s.DbOpen(s.SqliteDb)
 }
 
 func (s *Config) Current() (io.ReadCloser, error) {
@@ -75,4 +86,82 @@ func (s *Config) ImageHttp(url string) (io.ReadCloser, error) {
 		// defer resp.Body.Close()
 		return resp.Body, nil
 	}
+}
+
+func (s *Config) tootAllskyParams(p *AllskyParams, status *mastodon.Status) error {
+	text := "New #allsky image from " + p.as_date + "-" + p.as_time + "\n\n" +
+		"Sunset 🌇:  " + p.as_sun_sunset.Format(time.DateTime) + "\n" +
+		"Sunrise 🌅: " + p.as_sun_sunrise.Format(time.DateTime) + "\n" +
+		"\nSky\n" +
+		fmt.Sprintf("Star count:   %d\n", p.as_starcount) +
+		fmt.Sprintf("Meteor count: %d\n", p.as_meteorcount) +
+		fmt.Sprintf("ISS altitude: %.1f°\n", p.as_25544alt) +
+		"\nCamera\n" +
+		fmt.Sprintf("Gain:         %d\n", p.as_gain) +
+		fmt.Sprintf("Exposure:     %v\n", p.as_exposure_us) +
+		fmt.Sprintf("Temperature:  %d°C (sensor)\n", p.as_temperature_c) +
+		"\n" +
+		s.PublicUrl + "\n"
+
+	toot := mastodon.Toot{
+		Status:     text,
+		Visibility: mastodon.VisibilityPublic,
+		Language:   "en",
+	}
+	if status != nil {
+		toot.Visibility = mastodon.VisibilityDirectMessage
+		toot.InReplyToID = status.ID
+	}
+
+	if ifile, err := s.Image(p.date_name, filepath.Base(p.current_image)); err != nil {
+		return err
+	} else if err := s.toot.TootWithImageReader(toot, ifile, "Allsky Image"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Config) TootBest(status *mastodon.Status) error {
+
+	date_name := s.dbGetDateName()
+	if date_name == "" {
+		return errors.New("data not found")
+	}
+
+	p := s.dbGetBestStarcount(date_name)
+	if p == nil {
+		return errors.New("data not found for date_name " + date_name)
+	}
+
+	return s.tootAllskyParams(p, status)
+}
+
+func (s *Config) TootMeteorCount(status *mastodon.Status) error {
+
+	date_name := s.dbGetDateName()
+	if date_name == "" {
+		return errors.New("data not found")
+	}
+
+	p := s.dbGetBestMeteors(date_name)
+	if p == nil {
+		return errors.New("data not found for date_name " + date_name)
+	}
+
+	return s.tootAllskyParams(p, status)
+}
+
+func (s *Config) TootIssVisible(status *mastodon.Status) error {
+
+	date_name := s.dbGetDateName()
+	if date_name == "" {
+		return errors.New("data not found")
+	}
+
+	p := s.dbGetBestIss(date_name)
+	if p == nil {
+		return errors.New("data not found for date_name " + date_name)
+	}
+
+	return s.tootAllskyParams(p, status)
 }

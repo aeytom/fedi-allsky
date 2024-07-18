@@ -1,6 +1,8 @@
 package allsky
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -24,7 +26,7 @@ type AllskyParams struct {
 	date_name        string        // =20240714
 }
 
-func ParseRequest(req *http.Request) *AllskyParams {
+func ParseRequest(req *http.Request) (p *AllskyParams, err error) {
 	as_25544alt := req.FormValue("AS_25544ALT")           // =-45deg 38' 33.7"
 	as_25544visible := req.FormValue("AS_25544VISIBLE")   // =No
 	as_date := req.FormValue("AS_DATE")                   // =20240714
@@ -39,7 +41,14 @@ func ParseRequest(req *http.Request) *AllskyParams {
 	current_image := req.FormValue("CURRENT_IMAGE")       // =/home/tay/allsky/tmp/image-20240714015605.jpg
 	date_name := req.FormValue("DATE_NAME")               // =20240714
 
-	p := AllskyParams{
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("catch param parse error: ", r)
+			err = errors.New(fmt.Sprint(r))
+		}
+	}()
+
+	p = &AllskyParams{
 		as_25544alt:      mustParseAngle(as_25544alt),
 		as_25544visible:  mustParseBool(as_25544visible),
 		as_date:          as_date,
@@ -55,7 +64,7 @@ func ParseRequest(req *http.Request) *AllskyParams {
 		date_name:        date_name,
 	}
 
-	return &p
+	return p, err
 }
 
 func mustParseAngle(val string) float64 {
@@ -66,14 +75,14 @@ func mustParseAngle(val string) float64 {
 	}
 	matches := re.FindStringSubmatch(val)
 	if deg, err := strconv.ParseFloat(matches[2], 64); err != nil {
-		log.Print(err, val)
+		log.Panic(err, val)
 		return angle
 	} else {
 		angle += deg
 	}
 	if matches[3] != "" {
 		if min, err := strconv.ParseInt(matches[3], 10, 16); err != nil {
-			log.Print(err, val)
+			log.Panic(err, val)
 			return angle
 		} else {
 			angle += float64(min) / 60.0
@@ -81,7 +90,7 @@ func mustParseAngle(val string) float64 {
 	}
 	if matches[4] != "" {
 		if sec, err := strconv.ParseFloat(matches[4], 64); err != nil {
-			log.Print(err, val)
+			log.Panic(err, val)
 			return angle
 		} else {
 			angle += sec / 3600.0
@@ -96,7 +105,7 @@ func mustParseAngle(val string) float64 {
 
 func mustParseInt(val string) int64 {
 	if i, err := strconv.ParseInt(val, 10, 64); err != nil {
-		log.Print("not an integer: "+val, err)
+		log.Panic("not an integer: "+val, err)
 		return 0
 	} else {
 		return i
@@ -113,9 +122,9 @@ func mustParseBool(val string) bool {
 
 func mustParseDateTime(val string) time.Time {
 	if loc, err := time.LoadLocation("Europe/Berlin"); err != nil {
-		log.Println(val, err)
+		log.Panic(val, err)
 	} else if t, err := time.ParseInLocation("20060102 15:04:05", val, loc); err != nil {
-		log.Println(val, err)
+		log.Panic(val, err)
 	} else {
 		return t
 	}
@@ -124,7 +133,7 @@ func mustParseDateTime(val string) time.Time {
 
 func mustParseDuration(val string) time.Duration {
 	if t, err := time.ParseDuration(val); err != nil {
-		log.Println(val, err)
+		log.Panic(val, err)
 	} else {
 		return t
 	}

@@ -8,12 +8,13 @@ import (
 func main() {
 	cfg := app.LoadConfig()
 	cfg.Allsky.Init(cfg.Logger())
+	defer cfg.Allsky.DbClose()
 
 	m := toot.Init(&cfg.Mastodon, cfg.Logger())
 	m.RegisterAllsky(&cfg.Allsky)
 	m.ProcessNotifications()
 
-	go cfg.Allsky.ListenMotionWebhook(m)
+	go cfg.Allsky.ListenAllskyHttp(m)
 	m.WatchNotifications()
 
 }

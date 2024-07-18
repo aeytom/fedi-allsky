@@ -18,6 +18,9 @@ type MotionEye interface {
 
 type Allsky interface {
 	Current() (io.ReadCloser, error)
+	TootBest(status *mastodon.Status) error
+	TootMeteorCount(status *mastodon.Status) error
+	TootIssVisible(status *mastodon.Status) error
 }
 
 type Config struct {
@@ -63,7 +66,7 @@ func (s *Config) handleMention(n *mastodon.Notification) {
 	}
 
 	s.Log().Printf("handleMention from: %#v :: %#v", n.Status.Account.Acct, text)
-	cmd := regexp.MustCompile(`/(help|allsky)\b`).FindString(text)
+	cmd := regexp.MustCompile(`/(help|allsky|best|iss|meteor)\b`).FindString(text)
 	s.Log().Print("command " + cmd)
 
 	switch cmd {
@@ -71,6 +74,12 @@ func (s *Config) handleMention(n *mastodon.Notification) {
 		s.sendHelp(&n.Status.Account, "")
 	case "/allsky":
 		err = s.cmdAllsky(n.Status)
+	case "/best":
+		err = s.cmdBestStarcount(n.Status)
+	case "/meteor":
+		err = s.cmdMeteorCount(n.Status)
+	case "/iss":
+		err = s.cmdIssVisible(n.Status)
 	default:
 		err = errors.New("does not understand your message")
 	}
@@ -103,8 +112,11 @@ Hello %s (@%s)!
 
 I understand these commands:
 
-- "/help"     – diese Meldung
-- "/allsky"   – das aktuelle Bild der Allsky Kamera 
+- "/help"     – this text
+- "/allsky"   – current allsky image 
+- "/best"     – image with most stars
+- "/iss"      – image with best visible ISS
+- "/meteor"   – image with most detected meteors
 
 Your %s
 @%s
