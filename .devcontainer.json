@@ -2,7 +2,7 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/go
 {
 	"name": "Fedi-Allsky",
-	"image": "mcr.microsoft.com/devcontainers/go:1-1.22-bookworm",
+	"image": "mcr.microsoft.com/devcontainers/go:1-1.22-bullseye",
 	"features": {
 		"ghcr.io/swift-server-community/swift-devcontainer-features/sqlite:1": {}
 	},
@@ -10,5 +10,6 @@
 	"appPort": 18888,
 	"forwardPorts": [
 		18888
-	]
+	],
+	"postCreateCommand": "sudo apt-get update; sudo apt-get install -y -qq gcc-arm-linux-gnueabihf"
 }

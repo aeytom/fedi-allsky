@@ -5,6 +5,7 @@ go 1.22.5
 require (
 	github.com/aeytom/fedilib v0.1.0
 	github.com/mattn/go-mastodon v0.0.8
+	github.com/mattn/go-sqlite3 v1.14.22
 	gopkg.in/yaml.v3 v3.0.1
 )
 
