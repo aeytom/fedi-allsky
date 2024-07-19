@@ -109,6 +109,7 @@ func (s *Config) tootAllskyParams(p *AllskyParams, status *mastodon.Status) erro
 		Language:   "en",
 	}
 	if status != nil {
+		toot.Status = fmt.Sprintf("Hello %s (@%s),\n\n", status.Account.Username, status.Account.Acct) + toot.Status
 		toot.Visibility = mastodon.VisibilityDirectMessage
 		toot.InReplyToID = status.ID
 	}
@@ -128,9 +129,9 @@ func (s *Config) TootBest(status *mastodon.Status) error {
 		return errors.New("data not found")
 	}
 
-	p := s.dbGetBestStarcount(date_name)
-	if p == nil {
-		return errors.New("data not found for date_name " + date_name)
+	p, err := s.dbGetBestStarcount(date_name)
+	if err != nil {
+		return errors.Join(errors.New("data not found for date_name "+date_name), err)
 	}
 
 	return s.tootAllskyParams(p, status)
@@ -143,9 +144,9 @@ func (s *Config) TootMeteorCount(status *mastodon.Status) error {
 		return errors.New("data not found")
 	}
 
-	p := s.dbGetBestMeteors(date_name)
-	if p == nil {
-		return errors.New("data not found for date_name " + date_name)
+	p, err := s.dbGetBestMeteors(date_name)
+	if err != nil {
+		return errors.Join(errors.New("data not found for date_name "+date_name), err)
 	}
 
 	return s.tootAllskyParams(p, status)
@@ -158,9 +159,9 @@ func (s *Config) TootIssVisible(status *mastodon.Status) error {
 		return errors.New("data not found")
 	}
 
-	p := s.dbGetBestIss(date_name)
-	if p == nil {
-		return errors.New("data not found for date_name " + date_name)
+	p, err := s.dbGetBestIss(date_name)
+	if err != nil {
+		return errors.Join(errors.New("data not found for date_name "+date_name), err)
 	}
 
 	return s.tootAllskyParams(p, status)
