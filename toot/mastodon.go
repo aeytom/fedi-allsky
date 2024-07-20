@@ -20,6 +20,7 @@ type Allsky interface {
 	Current() (io.ReadCloser, error)
 	TootBest(status *mastodon.Status) error
 	TootMeteorCount(status *mastodon.Status) error
+	TootMeteorList(status *mastodon.Status) error
 	TootIssVisible(status *mastodon.Status) error
 }
 
@@ -66,7 +67,7 @@ func (s *Config) handleMention(n *mastodon.Notification) {
 	}
 
 	s.Log().Printf("handleMention from: %#v :: %#v", n.Status.Account.Acct, text)
-	cmd := regexp.MustCompile(`/(help|allsky|best|iss|meteor)\b`).FindString(text)
+	cmd := regexp.MustCompile(`/(help|allsky|best|iss|meteor|report)\b`).FindString(text)
 	s.Log().Print("command " + cmd)
 
 	switch cmd {
@@ -80,6 +81,8 @@ func (s *Config) handleMention(n *mastodon.Notification) {
 		err = s.cmdMeteorCount(n.Status)
 	case "/iss":
 		err = s.cmdIssVisible(n.Status)
+	case "/report":
+		err = s.cmdMeteorList(n.Status)
 	default:
 		err = errors.New("does not understand your message")
 	}
@@ -117,6 +120,7 @@ I understand these commands:
 - "/best"     – image with most stars
 - "/iss"      – image with best visible ISS
 - "/meteor"   – image with most detected meteors
+- "/report"   – detailed info for last night
 
 Your %s
 @%s

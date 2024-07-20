@@ -12,9 +12,7 @@ func main() {
 
 	m := toot.Init(&cfg.Mastodon, cfg.Logger())
 	m.RegisterAllsky(&cfg.Allsky)
-	m.ProcessNotifications()
-
 	go cfg.Allsky.ListenAllskyHttp(m)
 	m.WatchNotifications()
-
+	m.ProcessNotifications()
 }

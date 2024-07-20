@@ -162,6 +162,25 @@ func (s *Config) dbGetBestMeteors(date_name string) (*AllskyParams, error) {
 	return s.dbRow(row)
 }
 
+func (s *Config) dbListMeteors(date_name string) ([]*AllskyParams, error) {
+	sql := "SELECT `as_date`,`as_time`,`as_starcount`,`as_meteorcount` FROM `allsky` WHERE `date_name` = ? AND `as_starcount` > ? AND `as_meteorcount` > 0 ORDER BY `as_meteorcount` DESC LIMIT 9"
+	if rows, err := s.db.Query(sql, date_name, 20); err != nil {
+		return nil, err
+	} else {
+		pp := make([]*AllskyParams, 0)
+		defer rows.Close()
+		for rows.Next() {
+			p := AllskyParams{}
+			if err := rows.Scan(&p.as_date, &p.as_time, &p.as_starcount, &p.as_meteorcount); err != nil {
+				return nil, err
+			} else {
+				pp = append(pp, &p)
+			}
+		}
+		return pp, nil
+	}
+}
+
 func (s *Config) dbGetBestIss(date_name string) (*AllskyParams, error) {
 	sql := "SELECT " + columns + " FROM `allsky` WHERE `date_name` = ? AND `as_starcount` > ? AND `as_25544visible` > 0 ORDER BY `as_25544alt` DESC LIMIT 1"
 	row := s.db.QueryRow(sql, date_name, s.MinStarCount/3)

@@ -101,6 +101,8 @@ func (s *Config) tootAllskyParams(p *AllskyParams, status *mastodon.Status) erro
 		fmt.Sprintf("Exposure:     %v\n", p.as_exposure_us) +
 		fmt.Sprintf("Temperature:  %d°C (sensor)\n", p.as_temperature_c) +
 		"\n" +
+		"use /report to get more info about the last night.\n" +
+		"\n" +
 		s.PublicUrl + "\n"
 
 	toot := mastodon.Toot{
@@ -165,4 +167,50 @@ func (s *Config) TootIssVisible(status *mastodon.Status) error {
 	}
 
 	return s.tootAllskyParams(p, status)
+}
+
+func (s *Config) TootMeteorList(status *mastodon.Status) error {
+
+	date_name := s.dbGetDateName()
+	if date_name == "" {
+		return errors.New("data not found")
+	}
+
+	dn := mustParseDateTimeSplit(date_name, "")
+
+	text := "#allsky »/report« for " + dn.Format(time.DateOnly) + "\n"
+
+	if cs, err := s.dbGetBestStarcount(date_name); err != nil {
+		s.log.Println(err)
+	} else {
+		csd := mustParseDateTimeSplit(cs.as_date, cs.as_time)
+		text += fmt.Sprintf("\nMost visible stars »%d« counted at %s\n", cs.as_starcount, csd.Format(time.DateTime))
+	}
+
+	if lm, err := s.dbListMeteors(date_name); err != nil {
+		s.log.Println(err)
+	} else {
+		text += "\nMeteor detected:\n"
+		for _, m := range lm {
+			md := mustParseDateTimeSplit(m.as_date, m.as_time)
+			text += fmt.Sprintf("- %d meteors at %s (stars %d)\n", m.as_meteorcount, md.Format(time.DateTime), m.as_starcount)
+		}
+	}
+
+	toot := mastodon.Toot{
+		Status:     text,
+		Visibility: mastodon.VisibilityPublic,
+		Language:   "en",
+	}
+	if status != nil {
+		toot.Status = fmt.Sprintf("Hello %s (@%s),\n\n", status.Account.Username, status.Account.Acct) + toot.Status
+		toot.Visibility = mastodon.VisibilityDirectMessage
+		toot.InReplyToID = status.ID
+	}
+
+	if len(toot.Status) >= 500 {
+		toot.Status = toot.Status[0:497] + "\n…"
+	}
+
+	return s.toot.TootWithImage(toot, "")
 }

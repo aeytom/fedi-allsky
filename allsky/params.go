@@ -139,3 +139,23 @@ func mustParseDuration(val string) time.Duration {
 	}
 	return 0
 }
+
+func mustParseDateTimeSplit(as_date string, as_time string) time.Time {
+	format := "20060102 150405"
+	val := as_date + " " + as_time
+	if as_date == "" {
+		format = "150405"
+		val = as_time
+	} else if as_time == "" {
+		format = "20060102"
+		val = as_date
+	}
+	if loc, err := time.LoadLocation("Europe/Berlin"); err != nil {
+		log.Panic(as_date, as_time, err)
+	} else if t, err := time.ParseInLocation(format, val, loc); err != nil {
+		log.Panic(as_date, as_time, err)
+	} else {
+		return t
+	}
+	return time.Time{}
+}

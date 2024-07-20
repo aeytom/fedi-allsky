@@ -50,6 +50,11 @@ func (s *Config) cmdMeteorCount(status *mastodon.Status) error {
 	return err
 }
 
+func (s *Config) cmdMeteorList(status *mastodon.Status) error {
+	err := s.allsky.TootMeteorList(status)
+	return err
+}
+
 func (s *Config) cmdIssVisible(status *mastodon.Status) error {
 	err := s.allsky.TootIssVisible(status)
 	return err
