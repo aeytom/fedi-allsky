@@ -19,7 +19,7 @@ type MotionEye interface {
 type Allsky interface {
 	Current() (io.ReadCloser, error)
 	TootBest(status *mastodon.Status) error
-	TootMeteorCount(status *mastodon.Status) error
+	TootMeteorCount(status *mastodon.Status, n string) error
 	TootMeteorList(status *mastodon.Status) error
 	TootIssVisible(status *mastodon.Status) error
 }
@@ -67,29 +67,33 @@ func (s *Config) handleMention(n *mastodon.Notification) {
 	}
 
 	s.Log().Printf("handleMention from: %#v :: %#v", n.Status.Account.Acct, text)
-	cmd := regexp.MustCompile(`/(help|allsky|best|iss|meteor|report)\b`).FindString(text)
-	s.Log().Print("command " + cmd)
+	re := regexp.MustCompile(`/(help|allsky|best|iss|meteor|report)(\d?)\b`)
+	if re.MatchString(text) {
+		matches := re.FindStringSubmatch(text)
+		s.Log().Print("command", matches)
+		switch matches[1] {
+		case "help":
+			s.sendHelp(&n.Status.Account, "")
+		case "allsky":
+			err = s.cmdAllsky(n.Status)
+		case "best":
+			err = s.cmdBestStarcount(n.Status)
+		case "meteor":
+			err = s.cmdMeteorCount(n.Status, matches[2])
+		case "iss":
+			err = s.cmdIssVisible(n.Status)
+		case "report":
+			err = s.cmdMeteorList(n.Status)
+		default:
+			if n.Status.Visibility != mastodon.VisibilityPublic {
+				err = errors.New("does not understand your message")
+			}
+		}
 
-	switch cmd {
-	case "/help":
-		s.sendHelp(&n.Status.Account, "")
-	case "/allsky":
-		err = s.cmdAllsky(n.Status)
-	case "/best":
-		err = s.cmdBestStarcount(n.Status)
-	case "/meteor":
-		err = s.cmdMeteorCount(n.Status)
-	case "/iss":
-		err = s.cmdIssVisible(n.Status)
-	case "/report":
-		err = s.cmdMeteorList(n.Status)
-	default:
-		err = errors.New("does not understand your message")
-	}
-
-	if err != nil {
-		log.Println(err)
-		s.sendHelp(&n.Status.Account, err.Error())
+		if err != nil {
+			log.Println(err)
+			s.sendHelp(&n.Status.Account, err.Error())
+		}
 	}
 }
 

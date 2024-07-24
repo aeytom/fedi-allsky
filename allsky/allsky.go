@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/aeytom/fedilib"
@@ -139,19 +140,29 @@ func (s *Config) TootBest(status *mastodon.Status) error {
 	return s.tootAllskyParams(p, status)
 }
 
-func (s *Config) TootMeteorCount(status *mastodon.Status) error {
+func (s *Config) TootMeteorCount(status *mastodon.Status, n string) error {
 
 	date_name := s.dbGetDateName()
 	if date_name == "" {
 		return errors.New("data not found")
 	}
 
-	p, err := s.dbGetBestMeteors(date_name)
-	if err != nil {
-		return errors.Join(errors.New("data not found for date_name "+date_name), err)
+	if n == "" {
+		p, err := s.dbGetBestMeteors(date_name)
+		if err != nil {
+			return errors.Join(errors.New("data not found for date_name "+date_name), err)
+		}
+		return s.tootAllskyParams(p, status)
+	} else {
+		if lm, err := s.dbListMeteors(date_name); err != nil {
+			return err
+		} else if idx, err := strconv.ParseInt(n, 10, 64); err != nil {
+			return errors.Join(errors.New(n), err)
+		} else if int64(len(lm)) >= idx {
+			return s.tootAllskyParams(lm[idx-1], status)
+		}
 	}
-
-	return s.tootAllskyParams(p, status)
+	return errors.New("meteor data not found")
 }
 
 func (s *Config) TootIssVisible(status *mastodon.Status) error {
@@ -190,10 +201,10 @@ func (s *Config) TootMeteorList(status *mastodon.Status) error {
 	if lm, err := s.dbListMeteors(date_name); err != nil {
 		s.log.Println(err)
 	} else {
-		text += "\nMeteor detected:\n"
-		for _, m := range lm {
+		text += "\nMeteor detected at time (visible stars):\n"
+		for idx, m := range lm {
 			md := mustParseDateTimeSplit(m.as_date, m.as_time)
-			text += fmt.Sprintf("- %d meteors at %s (stars %d)\n", m.as_meteorcount, md.Format(time.DateTime), m.as_starcount)
+			text += fmt.Sprintf("- /meteor%d – %d at %s (%d)\n", (idx + 1), m.as_meteorcount, md.Format(time.TimeOnly), m.as_starcount)
 		}
 	}
 

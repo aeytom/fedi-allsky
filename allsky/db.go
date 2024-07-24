@@ -163,7 +163,7 @@ func (s *Config) dbGetBestMeteors(date_name string) (*AllskyParams, error) {
 }
 
 func (s *Config) dbListMeteors(date_name string) ([]*AllskyParams, error) {
-	sql := "SELECT `as_date`,`as_time`,`as_starcount`,`as_meteorcount` FROM `allsky` WHERE `date_name` = ? AND `as_starcount` > ? AND `as_meteorcount` > 0 ORDER BY `as_meteorcount` DESC LIMIT 9"
+	sql := "SELECT " + columns + " FROM `allsky` WHERE `date_name` = ? AND `as_starcount` > ? AND `as_meteorcount` > 0 AND `as_meteorcount` < 8 ORDER BY `as_meteorcount` DESC LIMIT 9"
 	if rows, err := s.db.Query(sql, date_name, 20); err != nil {
 		return nil, err
 	} else {
@@ -171,9 +171,19 @@ func (s *Config) dbListMeteors(date_name string) ([]*AllskyParams, error) {
 		defer rows.Close()
 		for rows.Next() {
 			p := AllskyParams{}
-			if err := rows.Scan(&p.as_date, &p.as_time, &p.as_starcount, &p.as_meteorcount); err != nil {
+			var as_sun_sunrise, as_sun_sunset string
+			if err := rows.Scan(&p.as_25544alt, &p.as_25544visible, &p.as_date, &p.as_exposure_us, &p.as_gain, &p.as_meteorcount, &p.as_starcount, &as_sun_sunrise, &as_sun_sunset, &p.as_temperature_c, &p.as_time, &p.current_image, &p.date_name); err != nil {
 				return nil, err
 			} else {
+				var err error
+				if p.as_sun_sunrise, err = time.Parse(time.RFC3339, as_sun_sunrise); err != nil {
+					s.log.Println(as_sun_sunrise, err)
+					continue
+				}
+				if p.as_sun_sunset, err = time.Parse(time.RFC3339, as_sun_sunset); err != nil {
+					s.log.Println(as_sun_sunset, err)
+					continue
+				}
 				pp = append(pp, &p)
 			}
 		}

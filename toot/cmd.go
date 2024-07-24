@@ -45,8 +45,8 @@ func (s *Config) cmdBestStarcount(status *mastodon.Status) error {
 	return err
 }
 
-func (s *Config) cmdMeteorCount(status *mastodon.Status) error {
-	err := s.allsky.TootMeteorCount(status)
+func (s *Config) cmdMeteorCount(status *mastodon.Status, n string) error {
+	err := s.allsky.TootMeteorCount(status, n)
 	return err
 }
 
