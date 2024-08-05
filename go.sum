@@ -1,5 +1,7 @@
 github.com/aeytom/fedilib v0.1.0 h1:mmBx4s348hGi3zH6FK/lMmcNJszYAC892MWUr8j5N7Y=
 github.com/aeytom/fedilib v0.1.0/go.mod h1:t7qjio4TIEaIaAm1wJyyLyIXN5Fg404RyyWyj8Ni4zA=
+github.com/aeytom/fedilib v0.1.1 h1:HOcm0Qpaxv3pVnGFL+I3+c+D8Z0FSgJ6z7fFX5pF4zg=
+github.com/aeytom/fedilib v0.1.1/go.mod h1:t7qjio4TIEaIaAm1wJyyLyIXN5Fg404RyyWyj8Ni4zA=
 github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aNNg=
 github.com/gorilla/websocket v1.5.3/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/kr/pretty v0.2.1 h1:Fmg33tUaq4/8ym9TJN1x7sLJnHVwhP33CNkpYV/7rwI=
