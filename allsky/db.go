@@ -163,8 +163,8 @@ func (s *Config) dbGetBestMeteors(date_name string) (*AllskyParams, error) {
 }
 
 func (s *Config) dbListMeteors(date_name string) ([]*AllskyParams, error) {
-	sql := "SELECT " + columns + " FROM `allsky` WHERE `date_name` = ? AND `as_starcount` > ? AND `as_meteorcount` > 0 AND `as_meteorcount` < 8 ORDER BY `as_meteorcount` DESC LIMIT 9"
-	if rows, err := s.db.Query(sql, date_name, 20); err != nil {
+	sql := "SELECT " + columns + " FROM `allsky` WHERE `date_name` = ? AND `as_starcount` > ? AND `as_meteorcount` > 0 AND `as_meteorcount` < 8 ORDER BY (`as_starcount` *  `as_starcount` / `as_meteorcount`) DESC LIMIT 9"
+	if rows, err := s.db.Query(sql, date_name, s.MinStarCount/4); err != nil {
 		return nil, err
 	} else {
 		pp := make([]*AllskyParams, 0)
