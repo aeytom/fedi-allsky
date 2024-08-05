@@ -111,15 +111,26 @@ func (s *Config) tootAllskyParams(p *AllskyParams, status *mastodon.Status) erro
 		Visibility: mastodon.VisibilityPublic,
 		Language:   "en",
 	}
+
+	var ifile io.ReadCloser
 	if status != nil {
 		toot.Status = fmt.Sprintf("Hello %s (@%s),\n\n", status.Account.Username, status.Account.Acct) + toot.Status
 		toot.Visibility = mastodon.VisibilityDirectMessage
 		toot.InReplyToID = status.ID
+		if ir, err := s.Image(p.date_name, filepath.Base(p.current_image)); err != nil {
+			return err
+		} else {
+			ifile = ir
+		}
+	} else {
+		if ir, err := s.ImageHttp(s.LocalUrl + "/current/tmp/image.jpg"); err != nil {
+			return err
+		} else {
+			ifile = ir
+		}
 	}
 
-	if ifile, err := s.Image(p.date_name, filepath.Base(p.current_image)); err != nil {
-		return err
-	} else if err := s.toot.TootWithImageReader(toot, ifile, "Allsky Image"); err != nil {
+	if err := s.toot.TootWithImageReader(toot, ifile, "Allsky Image"); err != nil {
 		return err
 	}
 	return nil

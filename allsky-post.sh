@@ -1,9 +1,6 @@
 #!/bin/bash
 
-exec >> ${ALLSKY_TMP}/allsky-post.$(LANG=C date +%F-%X).log
-date
-
-curl -q http://localhost:18888/notify \
+curl -q --max-time 5 --connect-timeout 1 http://localhost:18888/notify \
         -d AS_25544ALT="$AS_25544ALT" \
         -d AS_25544VISIBLE="$AS_25544VISIBLE" \
         -d AS_DATE="$AS_DATE" \
@@ -18,6 +15,4 @@ curl -q http://localhost:18888/notify \
         -d CURRENT_IMAGE="$CURRENT_IMAGE" \
         -d DATE_NAME="$DATE_NAME"
 
-env | sort
-echo
 
