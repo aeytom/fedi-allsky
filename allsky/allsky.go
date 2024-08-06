@@ -206,7 +206,7 @@ func (s *Config) TootMeteorList(status *mastodon.Status) error {
 		s.log.Println(err)
 	} else {
 		csd := mustParseDateTimeSplit(cs.as_date, cs.as_time)
-		text += fmt.Sprintf("\nMost visible stars »%d« counted at %s\n", cs.as_starcount, csd.Format(time.DateTime))
+		text += fmt.Sprintf("\n/best star count »%d« at %s\n", cs.as_starcount, csd.Format(time.DateTime))
 	}
 
 	if lm, err := s.dbListMeteors(date_name); err != nil {

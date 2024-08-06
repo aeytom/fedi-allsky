@@ -89,9 +89,9 @@ func (s *Config) dbExpire(date_name string) error {
 }
 
 func (s *Config) lastActionBefore(key string, age time.Duration) bool {
-	ts := time.Now().Add(0 - age)
-	sql := "SELECT `ts` FROM `sent` WHERE `ts` > ? LIMIT 1"
-	row := s.db.QueryRow(sql, ts.UTC().Format(time.RFC3339Nano))
+	notbefore := time.Now().Add(0 - age).UTC().Format(time.RFC3339Nano)
+	sql := "SELECT `ts` FROM `sent` WHERE `key` = ? AND `ts` > ? LIMIT 1"
+	row := s.db.QueryRow(sql, key, notbefore)
 	var tsdb string
 	if err := row.Scan(&tsdb); err != nil {
 		s.log.Println(err)
@@ -107,9 +107,9 @@ func (s *Config) lastActionBefore(key string, age time.Duration) bool {
 }
 
 func (s *Config) markActionTime(key string) error {
-	ts := time.Now().UTC().Format(time.RFC3339Nano)
+	notbefore := time.Now().UTC().Format(time.RFC3339Nano)
 	sql := "INSERT INTO `sent`(`key`,`ts`) VALUES(?,?) ON CONFLICT(`key`) DO UPDATE SET `ts` = ?"
-	_, err := s.db.Exec(sql, key, ts, ts)
+	_, err := s.db.Exec(sql, key, notbefore, notbefore)
 	return err
 }
 
