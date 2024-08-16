@@ -157,8 +157,8 @@ func (s *Config) dbGetBestStarcount(date_name string) (*AllskyParams, error) {
 }
 
 func (s *Config) dbGetBestMeteors(date_name string) (*AllskyParams, error) {
-	sql := "SELECT " + columns + " FROM `allsky` WHERE `date_name` = ? AND `as_starcount` > ? AND `as_meteorcount` > 0 ORDER BY `as_meteorcount` DESC LIMIT 1"
-	row := s.db.QueryRow(sql, date_name, s.MinStarCount/3)
+	sql := "SELECT " + columns + " FROM `allsky` WHERE `date_name` = ? AND `as_starcount` > ? AND `as_meteorcount` > 0 AND `as_meteorcount` < 5 ORDER BY `as_meteorcount` DESC LIMIT 1"
+	row := s.db.QueryRow(sql, date_name, s.MinStarCount/2)
 	return s.dbRow(row)
 }
 
