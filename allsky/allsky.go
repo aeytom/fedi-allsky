@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -76,7 +77,7 @@ func (s *Config) Image(date string, file string) (io.ReadCloser, error) {
 
 // Image gets a image with HTTP
 func (s *Config) ImageHttp(url string) (io.ReadCloser, error) {
-	log.Print(url)
+	log.Print("ImageHttp ", url)
 	if resp, err := http.Get(url); err != nil {
 		return nil, err
 	} else if resp.StatusCode != 200 {
@@ -86,6 +87,17 @@ func (s *Config) ImageHttp(url string) (io.ReadCloser, error) {
 	} else {
 		// defer resp.Body.Close()
 		return resp.Body, nil
+	}
+}
+
+// ImageFile gets a image from current os filesystem
+func (s *Config) ImageFile(path string) (io.ReadCloser, error) {
+	log.Print("ImageFile ", path)
+	if fp, err := os.Open(path); err != nil {
+		log.Print(err)
+		return nil, err
+	} else {
+		return fp, nil
 	}
 }
 
@@ -114,22 +126,27 @@ func (s *Config) tootAllskyParams(p *AllskyParams, status *mastodon.Status) erro
 
 	var ifile io.ReadCloser
 	if status != nil {
+		// we replying to a follower
 		toot.Status = fmt.Sprintf("Hello %s (@%s),\n\n", status.Account.Username, status.Account.Acct) + toot.Status
 		toot.Visibility = mastodon.VisibilityDirectMessage
 		toot.InReplyToID = status.ID
+		// use image from old event
 		if ir, err := s.Image(p.date_name, filepath.Base(p.current_image)); err != nil {
 			return err
 		} else {
 			ifile = ir
 		}
+	} else if ir, err := s.ImageFile(p.current_image); err == nil {
+		// use current local image if possible
+		ifile = ir
+	} else if ir, err = s.ImageHttp(s.LocalUrl + "/current/tmp/image.jpg"); err == nil {
+		// fall back to common last image
+		ifile = ir
 	} else {
-		if ir, err := s.ImageHttp(s.LocalUrl + "/current/tmp/image.jpg"); err != nil {
-			return err
-		} else {
-			ifile = ir
-		}
+		return err
 	}
 
+	defer ifile.Close()
 	if err := s.toot.TootWithImageReader(toot, ifile, "Allsky Image"); err != nil {
 		return err
 	}
