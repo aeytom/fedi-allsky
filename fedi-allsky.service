@@ -1,0 +1,14 @@
+[Unit]
+Description=allsky mastodon bot
+After=networking.service
+After=allsky.service
+
+[Service]
+ExecStart=/home/tay/fedi-allsky
+User=tay
+WorkingDirectory=/home/tay
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
+
