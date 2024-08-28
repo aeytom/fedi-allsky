@@ -1,6 +1,6 @@
 module github.com/aeytom/fedi-allsky
 
-go 1.22.5
+go 1.23
 
 require (
 	github.com/aeytom/fedilib v0.1.2
