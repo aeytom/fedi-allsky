@@ -53,7 +53,7 @@ func (s *Config) htNotify(w http.ResponseWriter, req *http.Request) {
 	// 	return
 	// }
 
-	if p.as_meteorcount > s.MinMeteorCount && s.dump1090.Visible(p.Time().Add(-30*time.Second), p.Time().Add(30*time.Second), 25) {
+	if p.as_meteorcount > s.MinMeteorCount && s.dump1090.FlightsVisible(p.Time().Add(-30*time.Second), p.Time().Add(30*time.Second), 25) {
 		// meteors ?
 		s.autoTootImage("as_meteorcount", p, w)
 		return

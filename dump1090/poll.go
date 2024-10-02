@@ -117,24 +117,24 @@ func (d *Config) poll() {
 			if distance > 0 {
 				elevation = math.Atan(*a.Altitude / FEED_KM / distance)
 			}
-			if elevation > 0.2 {
+			if elevation > degToRad(15) {
 				d.log.Printf("… see flight %s in %.1f km elevation angle %.1f°\n", *a.Flight, distance, radToDeg(elevation))
-			}
-			sql := "INSERT OR IGNORE INTO `dump1090` (`Now`,`Hex`,`Lat`,`Lon`,`Flight`,`Track`,`Speed`,`Altitude`,`Distance`,`Angle`) VALUES (?,?,?,?,?,?,?,?,?,?)"
-			if _, err := d.db.Exec(
-				sql,
-				now,
-				a.Hex,
-				a.Lat,
-				a.Lon,
-				a.Flight,
-				a.Track,
-				a.Speed,
-				a.Altitude,
-				distance,
-				elevation,
-			); err != nil {
-				d.log.Println(err)
+				sql := "INSERT OR IGNORE INTO `dump1090` (`Now`,`Hex`,`Lat`,`Lon`,`Flight`,`Track`,`Speed`,`Altitude`,`Distance`,`Angle`) VALUES (?,?,?,?,?,?,?,?,?,?)"
+				if _, err := d.db.Exec(
+					sql,
+					now,
+					a.Hex,
+					a.Lat,
+					a.Lon,
+					a.Flight,
+					a.Track,
+					a.Speed,
+					a.Altitude,
+					distance,
+					elevation,
+				); err != nil {
+					d.log.Println(err)
+				}
 			}
 		}
 	}
@@ -148,7 +148,7 @@ func degToRad(deg float64) float64 {
 	return deg * math.Pi / 180
 }
 
-func (d *Config) Visible(from time.Time, to time.Time, minelevation float64) bool {
+func (d *Config) FlightsVisible(from time.Time, to time.Time, minelevation float64) bool {
 	count := 0
 	if r, err := d.db.Query(
 		"SELECT COUNT(*) FROM `dum1090` WHERE `Now` > ? AND `Now` < ? AND `Angle` > ?",
