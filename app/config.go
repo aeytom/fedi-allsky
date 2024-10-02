@@ -8,14 +8,16 @@ import (
 	"path/filepath"
 
 	"github.com/aeytom/fedi-allsky/allsky"
+	"github.com/aeytom/fedi-allsky/dump1090"
 	"github.com/aeytom/fedilib"
 	"gopkg.in/yaml.v3"
 )
 
 type Env struct {
-	AppDir   string         `yaml:"dir,omitempty" json:"app_dir,omitempty"`
-	Mastodon fedilib.Config `yaml:"mastodon,omitempty" json:"mastodon,omitempty"`
-	Allsky   allsky.Config  `yaml:"allsky,omitempty" json:"allsky,omitempty"`
+	AppDir   string          `yaml:"dir,omitempty" json:"app_dir,omitempty"`
+	Mastodon fedilib.Config  `yaml:"mastodon,omitempty" json:"mastodon,omitempty"`
+	Allsky   allsky.Config   `yaml:"allsky,omitempty" json:"allsky,omitempty"`
+	Dump1090 dump1090.Config `json:"dump_1090,omitempty"`
 }
 
 type Settings struct {

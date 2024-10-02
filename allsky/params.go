@@ -67,6 +67,10 @@ func ParseRequest(req *http.Request) (p *AllskyParams, err error) {
 	return p, err
 }
 
+func (p *AllskyParams) Time() time.Time {
+	return mustParseDateTimeSplit(p.as_date, p.as_time)
+}
+
 func mustParseAngle(val string) float64 {
 	var angle float64
 	re := regexp.MustCompile("^(-)?(\\d{1,3}(?:\\.\\d+)?)(?:deg|°)(?: (\\d{1,2})'(?: (\\d{1,2}(?:\\.\\d+)?)\")?)?$")

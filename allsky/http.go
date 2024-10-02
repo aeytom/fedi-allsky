@@ -47,13 +47,13 @@ func (s *Config) htNotify(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if p.as_25544visible && p.as_25544alt > s.MinIssAlititude {
-		// ISS above 30°
-		s.autoTootImage("as_25544alt", p, w)
-		return
-	}
+	// if p.as_25544visible && p.as_25544alt > s.MinIssAlititude {
+	// 	// ISS above 30°
+	// 	s.autoTootImage("as_25544alt", p, w)
+	// 	return
+	// }
 
-	if p.as_meteorcount > s.MinMeteorCount {
+	if p.as_meteorcount > s.MinMeteorCount && s.dump1090.Visible(p.Time().Add(-30*time.Second), p.Time().Add(30*time.Second), 25) {
 		// meteors ?
 		s.autoTootImage("as_meteorcount", p, w)
 		return

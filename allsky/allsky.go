@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/aeytom/fedi-allsky/dump1090"
 	"github.com/aeytom/fedilib"
 	"github.com/mattn/go-mastodon"
 )
@@ -27,12 +28,13 @@ type Config struct {
 	//
 	SqliteDb string `yaml:"sqlite_db,omitempty" json:"sqlite_db,omitempty"`
 	//
-	log  *log.Logger
-	db   *sql.DB
-	toot fedilib.Toot
+	log      *log.Logger
+	db       *sql.DB
+	toot     fedilib.Toot
+	dump1090 *dump1090.Config
 }
 
-func (s *Config) Init(log *log.Logger) {
+func (s *Config) Init(log *log.Logger, dump1090 *dump1090.Config) {
 	if s.LocalUrl == "" {
 		s.LocalUrl = "http://allsky.fritz.box"
 	}
@@ -61,6 +63,7 @@ func (s *Config) Init(log *log.Logger) {
 
 	s.log = log
 	s.DbOpen(s.SqliteDb)
+	s.dump1090 = dump1090
 }
 
 func (s *Config) Current() (io.ReadCloser, error) {
