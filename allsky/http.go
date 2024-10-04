@@ -1,13 +1,28 @@
 package allsky
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/aeytom/fedi-allsky/dump1090"
 	"github.com/aeytom/fedilib"
 )
+
+type ExtraValue struct {
+	Value  string `json:"value"`
+	Expire int16  `json:"expire,omitempty"`
+}
+
+type ExtraVisibleFlights struct {
+	Count ExtraValue `json:"FLIGHT_COUNT,omitempty"`
+	List  ExtraValue `json:"FLIGHT_LIST,omitempty"`
+}
 
 // ListenAllskyHttp …
 func (s *Config) ListenAllskyHttp(mcfg fedilib.Toot) {
@@ -26,6 +41,9 @@ func (s *Config) ListenAllskyHttp(mcfg fedilib.Toot) {
 func (s *Config) htNotify(w http.ResponseWriter, req *http.Request) {
 
 	cacheHeader(w)
+
+	vf := s.dump1090.FlightsVisible(time.Now().Add(-40*time.Second), time.Now(), 25)
+	s.writeExtraVisibleFlights(vf)
 
 	var p *AllskyParams
 	if pr, err := ParseRequest(req); err == nil {
@@ -53,13 +71,34 @@ func (s *Config) htNotify(w http.ResponseWriter, req *http.Request) {
 	// 	return
 	// }
 
-	if p.as_meteorcount > s.MinMeteorCount && s.dump1090.FlightsVisible(p.Time().Add(-30*time.Second), p.Time().Add(30*time.Second), 25) {
+	if p.as_meteorcount > s.MinMeteorCount && len(vf) == 0 {
 		// meteors ?
 		s.autoTootImage("as_meteorcount", p, w)
 		return
 	}
 
 	writeResponseError("no interesting objects and not enough stars: "+fmt.Sprint(p.as_starcount), nil, http.StatusOK, w)
+}
+
+func (s *Config) writeExtraVisibleFlights(vf []dump1090.VisibleAircraft) {
+	if ex, err := os.OpenFile(filepath.Join(s.ExtraPath, "flights.json"), os.O_WRONLY+os.O_CREATE+os.O_TRUNC, 0644); err != nil {
+		s.log.Println(err)
+	} else {
+		defer ex.Close()
+		cf := make([]string, len(vf))
+		for i, f := range vf {
+			cf[i] = fmt.Sprintf("%s (%.1f km, %.1f°)", f.Flight, f.Distance, f.Elevation)
+		}
+		c := ExtraVisibleFlights{
+			Count: ExtraValue{Value: fmt.Sprint(len(vf)), Expire: 60},
+			List:  ExtraValue{Value: strings.Join(cf, ", "), Expire: 60},
+		}
+		if b, err := json.Marshal(c); err != nil {
+			s.log.Println(err)
+		} else if _, err := ex.Write(b); err != nil {
+			s.log.Println(err)
+		}
+	}
 }
 
 func (s *Config) autoTootImage(key string, p *AllskyParams, w http.ResponseWriter) {

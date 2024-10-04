@@ -148,19 +148,33 @@ func degToRad(deg float64) float64 {
 	return deg * math.Pi / 180
 }
 
-func (d *Config) FlightsVisible(from time.Time, to time.Time, minelevation float64) bool {
-	count := 0
+type VisibleAircraft struct {
+	Flight    string
+	Distance  float64
+	Elevation float64
+}
+
+func (d *Config) FlightsVisible(from time.Time, to time.Time, minelevation float64) []VisibleAircraft {
+	out := make([]VisibleAircraft, 0)
 	if r, err := d.db.Query(
-		"SELECT COUNT(*) FROM `dum1090` WHERE `Now` > ? AND `Now` < ? AND `Angle` > ?",
+		"SELECT Flight,Distance,Angle FROM `dump1090` WHERE `Now` > ? AND `Now` < ? AND `Angle` > ? GROUP BY `Flight` ORDER BY `Angle` DESC LIMIT 10",
 		from.UTC().Format(time.RFC3339Nano),
 		to.UTC().Format(time.RFC3339Nano),
 		degToRad(minelevation),
 	); err != nil {
 		d.log.Println(err)
-		return false
-	} else if err = r.Scan(&count); err != nil {
-		d.log.Println(err)
-		return false
+	} else {
+		for r.Next() {
+			f := VisibleAircraft{}
+			var rad float64
+			if err = r.Scan(&f.Flight, &f.Distance, &rad); err != nil {
+				d.log.Println(err)
+				continue
+			} else {
+				f.Elevation = radToDeg(rad)
+				out = append(out, f)
+			}
+		}
 	}
-	return count > 0
+	return out
 }

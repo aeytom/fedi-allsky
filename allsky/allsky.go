@@ -25,6 +25,8 @@ type Config struct {
 	MinStarCount    int64   `yaml:"min_star_count,omitempty" json:"min_star_count,omitempty"`
 	MinIssAlititude float64 `yaml:"min_iss_alititude,omitempty" json:"min_iss_alititude,omitempty"`
 	MinMeteorCount  int64   `yaml:"min_meteor_count,omitempty" json:"min_meteor_count,omitempty"`
+	ExtraPath       string
+
 	//
 	SqliteDb string `yaml:"sqlite_db,omitempty" json:"sqlite_db,omitempty"`
 	//
@@ -55,6 +57,9 @@ func (s *Config) Init(log *log.Logger, dump1090 *dump1090.Config) {
 	}
 	if s.MinMeteorCount == 0 {
 		s.MinMeteorCount = 1
+	}
+	if s.ExtraPath == "" {
+		s.ExtraPath = "./allsky/config/overlay/extra"
 	}
 
 	if s.SqliteDb == "" {
